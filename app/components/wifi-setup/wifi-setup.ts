@@ -13,12 +13,14 @@ for more info on Angular 2 Components.
     // styleUrls: ['build/components/wifi-setup/wifi-setup.css']
 })
 export class WifiSetup {
-    private hostpost: Hotspot;
-
     text: string = '';
 
     constructor(@Inject(Hotspot) hotspot: Hotspot) {
         this.text = 'Hello World';
+
         debugger;
+        Hotspot.scanWifi().then((a, b, c) => {
+            debugger;
+        });
     }
 }
