@@ -24,7 +24,6 @@ export class WifiSetup {
     constructor() {
         Hotspot.scanWifi().then((networks) => {
             this.networks = networks;
-            debugger;
         }).catch((err) => {
             if (err === 'cordova_not_available') {
                 this.networks = [
