@@ -4,7 +4,7 @@
   "description": "wifi-setup-ionic: An Ionic project",
   "scripts": {
     "test": "gulp test",
-    "postinstall": "node_modules/bower/bin/bower install -F"
+    "postinstall": "node_modules/.bin/bower install -F"
   },
   "repository": {
     "type": "git",
