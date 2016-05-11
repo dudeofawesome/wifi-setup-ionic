@@ -3,7 +3,7 @@
 ## Installation
 
 1. Download and save the necessary `ionic-native` dependencies
-    * `$ ionic plugin add cordova-plugin-network-information cordova-plugin-ble-central cordova-plugin-hotspot`
+    * `$ ionic plugin add cordova-plugin-hotspot`
 1. Add the `wifi-setup` directive to any `Page`s you want to use it on
     * ```
     @Page({

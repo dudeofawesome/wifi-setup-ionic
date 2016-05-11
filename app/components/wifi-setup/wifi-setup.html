@@ -1,7 +1,25 @@
 <div>
-    {{serviceName}}
-    {{err}}
-    <div>
-        {{networks | json}}
-    </div>
+    {{SERVICE_NAME}}<br />
+    {{errs | json}}
+    <ion-slides #setupSlider [options]="sliderOptions">
+        <ion-slide>
+            <button #startSetupButton id="start-setup-button" *ngIf="readyToConfigure" (click)="clickStartSetup()">
+                <div *ngIf="!configuring">Setup {{device.name}}</div>
+                <div *ngIf="configuring">
+                    <ion-spinner></ion-spinner>
+                </div>
+            </button>
+            <ion-scroll scrollY="true" style="height: 500px;">
+                {{networks | json}}
+            </ion-scroll>
+        </ion-slide>
+        <ion-slide>
+            <ion-list>
+                <ion-item *ngFor="#question of questions">
+                    <ion-label floating>{{question.inquiry}}</ion-label>
+                    <ion-input [type]="question.type | lowercase" [(ngModel)]="question.answer"></ion-input>
+                </ion-item>
+            </ion-list>
+        </ion-slide>
+    </ion-slides>
 </div>

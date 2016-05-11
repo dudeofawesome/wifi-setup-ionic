@@ -1,3 +1,5 @@
-div {
-    color: red;
+#start-setup-button ion-spinner {
+    &.spinner-crescent svg circle {
+        stroke: map-get($colors, light) !important;
+    }
 }
