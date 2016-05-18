@@ -25,16 +25,25 @@ export class Question {
      */
     pattern: RegExp;
     /**
+     * @property {RegExp}           options
+     *      Set of options to choose from if `type` === `QuestionTypes.SPINNER`
+     */
+    options: Array<string>;
+    /**
      * @property {string | number | Array<number>}  answer
      *      User given answer to the question
      */
     answer: string | number | Array<number>;
 
-    constructor (inquiry: string, key: string, type: QuestionTypes, pattern?: RegExp, answer?: string | number | Array<number>) {
+    constructor (inquiry: string, key: string, type: QuestionTypes, pattern?: RegExp | Array<string>, answer?: string | number | Array<number>) {
         this.inquiry = inquiry;
         this.key = key;
         this.type = type;
-        this.pattern = pattern;
+        if (!Array.isArray(pattern)) {
+            this.pattern = pattern;
+        } else {
+            this.options = pattern;
+        }
         this.answer = answer;
     }
 }
@@ -53,5 +62,6 @@ export enum QuestionTypes {
     COLOR,
     PASSWORD,
     ADDRESS,
-    TEL
+    TEL,
+    EMAIL
 }

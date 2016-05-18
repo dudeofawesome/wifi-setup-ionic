@@ -1,25 +1,52 @@
 <div>
-    {{SERVICE_NAME}}<br />
-    {{errs | json}}
+    <div *ngIf="errs && errs.length > 0">
+        {{errs | json}}
+    </div>
     <ion-slides #setupSlider [options]="sliderOptions">
         <ion-slide>
-            <button #startSetupButton id="start-setup-button" *ngIf="readyToConfigure" (click)="clickStartSetup()">
-                <div *ngIf="!configuring">Setup {{device.name}}</div>
-                <div *ngIf="configuring">
-                    <ion-spinner></ion-spinner>
+            <div *ngIf="readyToConfigure" style="display: flex; flex-direction: column;">
+                <div>
+                    Found {{SERVICE_NAME}} {{device.shortId}}
                 </div>
-            </button>
-            <ion-scroll scrollY="true" style="height: 500px;">
-                {{networks | json}}
-            </ion-scroll>
+                <div>
+                    <button #startSetupButton id="start-setup-button" (click)="clickStartSetup()">
+                        <div *ngIf="!configuring">Setup {{device.name}}</div>
+                        <div *ngIf="configuring">
+                            <ion-spinner></ion-spinner>
+                        </div>
+                    </button>
+                </div>
+            </div>
         </ion-slide>
         <ion-slide>
-            <ion-list>
+            <ion-list *ngIf="questions">
                 <ion-item *ngFor="#question of questions">
                     <ion-label floating>{{question.inquiry}}</ion-label>
-                    <ion-input [type]="question.type | lowercase" [(ngModel)]="question.answer"></ion-input>
+                    <ion-input [(ngModel)]="question.answer" [type]="QuestionTypes[question.type] | lowercase" [pattern]="question.pattern"></ion-input>
+                    <!-- TODO: figure out why the switch and if don't work... -->
+                    <!-- <div [ngSwitch]="question.type">
+                        <div *ngSwitchWhen="QuestionTypes.PASSWORD">
+                            <ion-label floating>{{question.inquiry}}</ion-label>
+                            <ion-input type="password" [(ngModel)]="question.answer"></ion-input>
+                        </div>
+                        <div *ngSwitchDefault>
+                            <ion-label floating>{{question.inquiry}}</ion-label>
+                            <ion-input type="text" [(ngModel)]="question.answer"></ion-input>
+                        </div>
+                    </div> -->
+                    <!-- <div>
+                        <div *ngIf="question.type === QuestionTypes.TEXT || !question.type">
+                            <ion-label floating>{{question.inquiry}}</ion-label>
+                            <ion-input type="text" [(ngModel)]="question.answer"></ion-input>
+                        </div>
+                        <div *ngIf="question.type === QuestionTypes.PASSWORD">
+                            <ion-label floating>{{question.inquiry}}</ion-label>
+                            <ion-input type="password" [(ngModel)]="question.answer"></ion-input>
+                        </div>
+                    </div> -->
                 </ion-item>
             </ion-list>
+            <button float="right" (click)="clickSave()">Save</button>
         </ion-slide>
     </ion-slides>
 </div>

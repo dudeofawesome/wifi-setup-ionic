@@ -1,21 +1,23 @@
 import {Component, Inject, Input, ViewChild} from 'angular2/core';
+import {CORE_DIRECTIVES, NgSwitch, NgSwitchWhen, NgSwitchDefault} from 'angular2/common';
+import {HTTP_PROVIDERS, Http, Headers, RequestOptions} from 'angular2/http';
 import {Button, Slides} from 'ionic-angular';
 import {Hotspot} from 'ionic-native';
-import {Network} from './waiting-for-drifty.interface';
+// import {Network, HotspotDevice} from 'ionic-native/types';
+import {Network, HotspotDevice} from './waiting-for-drifty.interface';
 import {Question, QuestionTypes} from './question.model';
 
 @Component({
     selector: 'wifi-setup',
     templateUrl: 'build/components/wifi-setup/wifi-setup.html',
     // styleUrls: ['build/components/wifi-setup/wifi-setup.css']
-    directives: [Slides]
+    directives: [Slides, NgSwitch, NgSwitchWhen, NgSwitchDefault, CORE_DIRECTIVES],
+    providers: [HTTP_PROVIDERS]
 })
 export class WifiSetup {
     @Input() IP: string;
     @Input('service-name') SERVICE_NAME: string = `Please set 'service-name'`;
     @Input('password') PASSWORD: string = `Please set 'password'`;
-    // @Input() serviceName: string = '';
-    // @Input() password: string = '';
 
     @ViewChild('startSetupButton') startSetupButton: Button;
     @ViewChild('setupSlider') slider: Slides;
@@ -27,10 +29,15 @@ export class WifiSetup {
 
     private device: {
         name: string;
-        network?: Network
+        network?: Network;
+        IP?: string;
+        shortId?: string | number;
+        id?: string | number;
     } = {
         name: this.SERVICE_NAME
     };
+
+    private questions: Array<Question> = [];
 
     errs: Array<string> = [];
 
@@ -38,7 +45,9 @@ export class WifiSetup {
     private readyToConfigure: boolean = false;
     private networks: Array<Network>;
 
-    constructor () {
+    private QuestionTypes = QuestionTypes;
+
+    constructor (@Inject(Http) private http) {
         Hotspot.scanWifi().then((networks: Array<Network>) => {
             this.networks = networks;
             this.device.network = this.idenfityNetwork();
@@ -74,8 +83,12 @@ export class WifiSetup {
         this.configuring = true;
 
         this.startSetup().then(() => {
+            this.configuring = false;
+
             this.slider.slideTo(2, 500, false);
         }).catch((err) => {
+            this.configuring = false;
+
             this.errs.push(err);
         });
     }
@@ -84,9 +97,12 @@ export class WifiSetup {
         return new Promise((resolve, reject) => {
             let network = this.idenfityNetwork();
             if (network) {
-                this.connectToWiFi(network.SSID, this.PASSWORD).then((success) => {
+                this.device.shortId = network.SSID.substring(this.SERVICE_NAME.length - 1);
+                this.connectToWiFi(network.SSID, this.PASSWORD).then(() => {
                     this.findDevice().then((deviceIP) => {
-                        this.getQuestions(deviceIP).then((questions) => {
+                        this.device.IP = deviceIP;
+                        this.getQuestions(this.device.IP).then((questions) => {
+                            this.questions = questions;
                             resolve();
                         })
                     })
@@ -96,7 +112,35 @@ export class WifiSetup {
             } else {
                 reject('Network not found');
             }
+        });
+    }
+
+    private clickSave (): void {
+        this.saveSettings(this.device.IP, this.questions).then(() => {
+            this.configuring = false;
+        }).catch((err) => {
+            console.log(err);
+            this.errs.push(err);
+            alert(err);
         })
+    }
+
+    private saveSettings (IP: string, questions: Array<Question>): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            // TODO: send this.questions to server
+            let body = JSON.stringify(questions);
+            let headers = new Headers({'Content-Type': 'application/json'});
+            let options = new RequestOptions({headers: headers});
+            this.http.post(`${IP}/save-settings`, body, options)
+                .map(res => res.json())
+                .subscribe((res) => {
+                    if (res.error) {
+                        reject(res.error);
+                    } else {
+                        resolve(res);
+                    }
+                });
+        });
     }
 
     private idenfityNetwork (): Network | undefined {
@@ -110,8 +154,8 @@ export class WifiSetup {
 
     private connectToWiFi (SSID: string, password: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            Hotspot.connectToHotspot(SSID, password).then((success) => {
-                resolve(success);
+            Hotspot.connectToWifi(SSID, password).then(() => {
+                resolve();
             }).catch((err) => {
                 console.error(err);
                 reject(err);
@@ -121,34 +165,51 @@ export class WifiSetup {
 
     private findDevice (): Promise<string> {
         return new Promise((resolve, reject) => {
-            // TODO: Implement this
-            resolve('192.168.42.1');
+            if (this.configuring) {
+                Hotspot.getNetConfig().then((netConfig) => {
+                    resolve(netConfig.gatewayIPAddress);
+                });
+            } else {
+                // TODO: Implement this
+                resolve('edyza.local');
+                // Hotspot.getAllHotspotDevices().then((devices: Array<HotspotDevice>) => {
+                //     console.log(devices);
+                // });
+            }
         });
     }
 
-    private getQuestions (deviceIP: string): Promise<Array<Question>> {
+    private getQuestions (IP: string): Promise<Array<Question>> {
         return new Promise((resolve, reject) => {
             // TODO: Implement this
-            let questions: Array<Question> = [
-                new Question(
-                    'WiFi SSID',
-                    'SSID',
-                    QuestionTypes.TEXT,
-                    /([\x00-\x7F]){1,32}/
-                ),
-                new Question(
-                    'WiFi password',
-                    'password',
-                    QuestionTypes.PASSWORD,
-                    /([\x00-\x7F]){8,63}/
-                ),
-                new Question(
-                    'Name',
-                    'name',
-                    QuestionTypes.TEXT
-                )
-            ]
-            resolve(questions);
+            // let questions: Array<Question> = [
+            //     new Question(
+            //         'WiFi SSID',
+            //         'SSID',
+            //         QuestionTypes.TEXT,
+            //         /([\x00-\x7F]){1,32}/
+            //     ),
+            //     new Question(
+            //         'WiFi password',
+            //         'password',
+            //         QuestionTypes.PASSWORD,
+            //         /([\x00-\x7F]){8,63}/
+            //     ),
+            //     new Question(
+            //         'Name',
+            //         'name',
+            //         QuestionTypes.TEXT
+            //     )
+            // ];
+            this.http.post(`${IP}/save-settings`)
+                .map(res => res.json())
+                .subscribe((questions) => {
+                    if (questions.error) {
+                        reject(questions.error);
+                    } else {
+                        resolve(questions);
+                    }
+                });
         });
     }
 }
