@@ -201,7 +201,8 @@ export class WifiSetup {
             //         QuestionTypes.TEXT
             //     )
             // ];
-            this.http.post(`${IP}/save-settings`)
+
+            this.http.get(`${IP}/questions`)
                 .map(res => res.json())
                 .subscribe((questions) => {
                     if (questions.error) {
